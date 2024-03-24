@@ -13,17 +13,21 @@ const userRouter = require('./routes/user')
 const jwt = require('jsonwebtoken');
 const authRouter = require('./routes/auth')
 const fs = require('fs');
+const errorHandler = require("./middleware/errorHandler");
+
 const publicKey = fs.readFileSync(path.resolve(__dirname,'./public.key'),'utf-8')
-
-
-console.log('env',process.env.DB_PASSWORD)
 
 //db connection
 main().catch(err => console.log(err));
 
 async function main() {
-  await mongoose.connect(process.env.MONGO_URL);
-  console.log('database connected')
+  try {
+    await mongoose.connect(process.env.MONGO_SERVER_URL, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log('Database connected');
+    // Continue with your code here
+  } catch (error) {
+    console.error('Error connecting to MongoDB:', error.message);
+  }
 }
 //Schema
 
@@ -72,13 +76,11 @@ server.use(express.static(path.resolve(__dirname,process.env.PUBLIC_DIR)));
 server.use('/auth',authRouter.router)
 server.use('/products',productRouter.router);
 server.use('/users',auth,userRouter.router);
+app.use(errorHandler);
+
 server.use('*',(req,res)=>{
     res.sendFile(path.resolve(__dirname,'build','index.html'))
 })
-
-
-
-
 
 
 app.listen(process.env.PORT, () => {
